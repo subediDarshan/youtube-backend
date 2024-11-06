@@ -35,30 +35,34 @@ const registerUser = asyncHandler( async (req, res, next) => {
 
 
     
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    const avatarLocalPath = req.files?.avatar[0]?.path || null;
     const coverImageLocalPath = req.files?.coverImage[0]?.path || "";
     if(!avatarLocalPath) {
         throw new ApiError(400,"Avatar file is required")
 
     }
     
-    const avatarUrl = await uploadOnCloudinary(avatarLocalPath)
-    const coverImageUrl = await uploadOnCloudinary(coverImageLocalPath)
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
     
+
     const newUser = await User.create({
         username: username.toLowerCase(),
         email,
         fullName,
-        avatar: avatarUrl,
-        coverImage: coverImageUrl,
+        avatar: avatar.url,
+        coverImage: coverImage.url,
         password,
     })
+
     
-    const searchNewUser = User.findById(newUser._id)?.select("-password -refreshToken")
+    const searchNewUser = await User.findById(newUser._id)?.select("-password -refreshToken")
+
 
     if(!searchNewUser) {
         throw new ApiError(500, "Something went wrong while registering the user")
     }
+
 
     return res.status(201).json(new ApiResponse(200, searchNewUser, "User created successfully"))
 
