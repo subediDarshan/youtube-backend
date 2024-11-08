@@ -14,7 +14,7 @@ const generateAcessAndRefreshToken = async (userId) => {
         const refreshToken = await user.generateRefreshToken()
         
         user.refreshToken = refreshToken
-        user.save({validateBeforeSave: false})
+        await user.save({validateBeforeSave: false})
         return { accessToken, refreshToken }
     } catch (error) {
         throw new ApiError(500, "Problem occured while generating access token")
@@ -235,4 +235,38 @@ const refreshAcessToken = asyncHandler( async (req, res, next) => {
 } )
 
 
-export { registerUser, loginUser, logoutUser, refreshAcessToken }
+
+// user updations
+
+const changePassword = asyncHandler( async (req, res, next) => {
+    const {oldPassword, newPassword} = req.body;
+
+    // req.user gives user with no password field, so needed to get user again
+    const user = await User.findById(req.user?._id)
+
+    const isPasswordValid = await user.isPasswordCorrect(oldPassword)
+
+    if(!isPasswordValid) {
+        throw new ApiError(400, "Incorrect old password");
+    }
+
+    user.password = newPassword;
+    await user.save({validateBeforeSave: false})
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"))
+
+} )
+
+
+const getCurrentUser = asyncHandler( async (req, res, next) => {
+    return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "Current user fetched"))
+} )
+
+
+
+
+export { registerUser, loginUser, logoutUser, refreshAcessToken, changePassword, getCurrentUser }
