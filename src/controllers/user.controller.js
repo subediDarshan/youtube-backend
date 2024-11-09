@@ -267,6 +267,29 @@ const getCurrentUser = asyncHandler( async (req, res, next) => {
 } )
 
 
+const changeAvatar = asyncHandler( async (req, res, next) => {
+    const avatarLocalPath = req.file?.path
+    if(!avatarLocalPath)
+        throw new ApiError(500, "File not found");
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if(!avatar)
+        throw new ApiError(500, "Problem uploading file")
+
+    const user = await User.findById(req?.user).select("-password -refreshToken")
+
+    if(!user)
+        throw new ApiError(500, "User not found")
+
+    user.avatar = avatar.url
+    await user.save({validateBeforeSave: false})
+    
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user, "avatar updated"))
+
+} )
 
 
-export { registerUser, loginUser, logoutUser, refreshAcessToken, changePassword, getCurrentUser }
+export { registerUser, loginUser, logoutUser, refreshAcessToken, changePassword, getCurrentUser, changeAvatar }
