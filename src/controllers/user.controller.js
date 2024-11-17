@@ -331,4 +331,100 @@ const changeCoverImage = asyncHandler( async (req, res, next) => {
 } )
 
 
-export { registerUser, loginUser, logoutUser, refreshAcessToken, changePassword, getCurrentUser, changeAvatar, changeCoverImage }
+const updateAccountDetails = asyncHandler( async(req, res, next) => {
+    const {fullName, email} = req.body;
+    if(!fullName && !email) {
+        throw new ApiError(400, "Atleast one field is required")
+    }
+
+    const updateField = {}
+    if(fullName) updateField.fullName = fullName
+    if(email) updateField.email = email
+
+    const updatedUser = await User.findByIdAndUpdate(
+        req?.user._id,
+        {
+            $set: updateField
+        },
+        { new: true }
+    ).select("-password -refreshToken")
+
+    if(!updatedUser) {
+        throw new ApiError(400, "Account updation Failed")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Account successfully updated"))
+
+} )
+
+const getChannelInfo = asyncHandler( async (req, res, next) => {
+    const {username} = req.params;
+    if(!username) {
+        throw new ApiError(400, "username not found")
+    }
+    const channel = await User.aggregate([
+        {
+            $match: {username: username?.toLowerCase().trim()}
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            $addFields: {
+                subscriberCount: { $size: "$subscribers" },
+                subscribedToCount: { $size: "$subscribedTo" },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in: [req?.user._id, "$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                username: 1,
+                email: 1,
+                fullName: 1,
+                avatar: 1,
+                coverImage: 1,
+                subscriberCount: 1,
+                subscribedToCount: 1,
+                isSubscribed: 1
+            }
+        }
+    ])
+    if(!channel?.length) {
+        throw new ApiError(404, "channel not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, channel[0], "channel info fetched successfully"))
+
+
+} )
+
+
+
+
+
+
+
+export { registerUser, loginUser, logoutUser, refreshAcessToken, changePassword, getCurrentUser, changeAvatar, changeCoverImage, getChannelInfo, updateAccountDetails }
