@@ -418,7 +418,6 @@ const getChannelInfo = asyncHandler(async (req, res, next) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res, next) => {
-
   const user = await User.aggregate([
     {
       $match: {
@@ -460,7 +459,6 @@ const getWatchHistory = asyncHandler(async (req, res, next) => {
   if (!user) {
     throw new ApiError(500, "Cannot find user's watch history");
   }
-  
 
   return res
     .status(200)
