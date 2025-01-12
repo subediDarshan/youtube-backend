@@ -53,14 +53,14 @@ const getAllVideos = asyncHandler(async (req, res) => {
         {
             $unwind: "$owner",
         },
-        // sorting ad pagination
+        // sorting and pagination
         {
             $sort: {
                 [sortBy]: sortType == "asc" ? 1 : -1,
             },
         },
         {
-            $skip: (parseInt(page) - 1) * limit,
+            $skip: (parseInt(page) - 1) * parseInt(limit),
         },
         {
             $limit: parseInt(limit),
