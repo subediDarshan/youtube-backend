@@ -1,3 +1,3 @@
 # Backend for custom youtube frontend app
 
-On testing phase
+Backend made with express JS for custom youtube plus twitter frontend app
